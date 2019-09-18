@@ -1,0 +1,39 @@
+---
+- name: Install k3s.service file
+  template:
+    src: k3s.service.j2
+    dest: /etc/systemd/system/k3s.service
+
+- name: Install k3s environment file
+  lineinfile:
+    create: yes
+    state: present
+    line: "{{ item }}"
+    dest: "/etc/{{ sysconfig_dir[ansible_os_family|lower()] }}/k3s"
+  with_items:
+    - "# line"
+
+- name: Start k3s service
+  service: 
+    name: k3s
+    enabled: yes
+    state: started
+
+- name: Wait till file is created
+  wait_for:
+    path: /var/lib/rancher/k3s/server/node-token
+    state: present
+    delay: 4
+
+
+- name: Slurp node token
+  slurp:
+      src: /var/lib/rancher/k3s/server/node-token
+  register: node_token
+  run_once: True
+
+- name: Cleanup and store node_token
+  set_fact:
+    node_token: "{{  node_token.content | b64decode | trim }}"
+  run_once: True
+

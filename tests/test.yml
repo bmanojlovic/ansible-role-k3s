@@ -1,0 +1,13 @@
+---
+
+- hosts: k3s_cluster
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role: k3s }
+
+  environment:
+    - http_proxy: "{{ proxy_env|default('') }}"
+    - https_proxy: "{{ proxy_env|default('') }}"
+    - no_proxy: "{{ ansible_host }}"
+

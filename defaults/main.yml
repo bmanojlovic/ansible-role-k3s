@@ -1,0 +1,9 @@
+---
+# defaults file for k3s
+
+# if not set it will default to latest which by design does not make
+# sense as it is not idempotent but should provide upgrade path in some sense...
+#k3s_version: latest
+
+# Where k3s should be installed at
+k3s_bin_path: /usr/local/bin

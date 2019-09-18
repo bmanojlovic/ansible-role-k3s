@@ -1,0 +1,29 @@
+[Unit]
+Description=Lightweight Kubernetes {%if 'node' in group_names %} agent
+{%else%} server
+{%endif%}
+Documentation=https://k3s.io
+After=network-online.target
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/{{ sysconfig_dir[ansible_os_family|lower] }}/k3s{%if 'node' in group_names %}-agent{%endif%}
+
+ExecStartPre=-/sbin/modprobe br_netfilter
+ExecStartPre=-/sbin/modprobe overlay
+ExecStart={{ k3s_bin_path }}/k3s {%if 'node' in group_names %}agent \
+{%else%}server \
+{%endif%}
+
+KillMode=process
+Delegate=yes
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

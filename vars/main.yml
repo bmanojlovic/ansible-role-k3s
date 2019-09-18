@@ -1,0 +1,12 @@
+---
+# vars file for k3s
+
+k3s_archs:
+  x86_64: ""
+  armv7l: "-armhf"
+  aarch64: "-arm64"
+
+sysconfig_dir:
+  debian: default
+  suse: sysconfig
+  redhat: sysconfig

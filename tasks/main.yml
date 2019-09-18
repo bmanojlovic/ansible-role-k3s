@@ -1,0 +1,106 @@
+---
+- name: Check if k3s binary is already installed
+  stat:
+    path: /usr/local/bin/k3s
+  register: stat_k3s
+
+- name: Get current version of k3s if present
+  shell: /usr/local/bin/k3s -version
+  register: k3s_current_version
+  changed_when: false
+  when:
+    - stat_k3s.stat.exists
+
+
+- name: parse current version
+  set_fact:
+    k3s_current_version: "{{ '0.0.1' if k3s_current_version.skipped is defined else k3s_current_version.stdout | regex_replace('^k3s.* v([^)].*) .*', '\\1')  }}"
+
+- name: Get latest version number of k3s from github
+  uri:
+    url: https://github.com/rancher/k3s/releases/latest
+    follow_redirects: none
+    status_code: "302"
+  register: k3s_latest_version
+  when:
+    - k3s_version is not defined
+
+- name: set version facts
+  set_fact:
+    k3s_version: "{{ k3s_latest_version.location |regex_replace('.*[/]v(.*)$', '\\1') }}"
+    k3s_latest_version: "{{ k3s_latest_version.location |regex_replace('.*[/]v(.*)$', '\\1') }}"
+  when:
+    - k3s_version is not defined
+
+- name: Current k3s version on servers
+  debug:
+    var: k3s_current_version
+
+- name: latest k3s version fetched from github
+  debug:
+    var: k3s_latest_version
+  when: k3s_latest_version.skipped is not defined
+
+# never doing downgrade!
+- name: Download k3s binary
+  get_url:
+      url: "https://github.com/rancher/k3s/releases/download/v{{ k3s_version |default (k3s_latest_version) }}/k3s{{k3s_archs[ansible_facts.architecture]}}"
+      dest: "{{ k3s_bin_path }}/k3s"
+      owner: root
+      group: root
+      force: yes
+      mode: 755
+  when: k3s_version is version(k3s_current_version, '>')
+
+- name: Create links for utilities
+  file:
+    src: "{{ k3s_bin_path }}/k3s"
+    path: "{{ k3s_bin_path }}/{{ item }}"
+    state: link
+  with_items:
+    - kubectl
+    - crictl
+    - ctr
+
+
+- name: Check if we are on selinux enabled system
+  command: getenforce
+  register: selinux_state  
+  failed_when: False
+  changed_when: False
+
+- name: Install required python module
+  package:
+    name: policycoreutils-python
+    state: present
+  when: selinux_state.rc != 2
+
+- name: Set Selinux file context on k3s
+  sefcontext:
+    target: "{{ k3s_bin_path }}/k3s"
+    setype: bin_t
+    state: present
+  when:
+    - selinux_state.rc != 2
+    - selinux_state.stdout in ['Enforcing', 'Permissive']
+
+- name: Apply new SELinux file context to filesystem
+  command: restorecon -v "{{ k3s_bin_path }}/k3s"
+  register: restorecon
+  changed_when: restorecon.stdout != ''
+  when:
+    - selinux_state.rc != 2
+    - selinux_state.stdout in ['Enforcing', 'Permissive']
+
+- name: Include tasks for master
+  include_tasks: master.yml
+  when:
+    - "'master' in group_names"
+    - "not ('node' in group_names and 'master' in group_names)"
+
+- name: Include tasks for node
+  include_tasks: node.yml
+  when: 
+    - "'node' in group_names"
+    - "not ('node' in group_names and 'master' in group_names)"
+    
