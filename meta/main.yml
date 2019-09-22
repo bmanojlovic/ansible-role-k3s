@@ -58,7 +58,7 @@ galaxy_info:
     version:
       - all
 
-  galaxy_tags: 
+  galaxy_tags:
     - k3s
     - kubernetes
     - containers
