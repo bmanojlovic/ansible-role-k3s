@@ -62,6 +62,14 @@
     - crictl
     - ctr
 
+- name: If firewalld is active set it up for k3s
+  shell: systemctl is-active firewalld
+  register: fs_active
+  changed_when: False
+
+- name: Configure firewalld
+  include_tasks: firewalld.yml
+  when: "'active' in fs_active.stdout_lines[0]"
 
 - name: Check if we are on selinux enabled system
   command: getenforce
