@@ -10,4 +10,3 @@
     - http_proxy: "{{ proxy_env|default('') }}"
     - https_proxy: "{{ proxy_env|default('') }}"
     - no_proxy: "{{ ansible_host }}"
-

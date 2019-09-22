@@ -14,7 +14,8 @@
 
 - name: parse current version
   set_fact:
-    k3s_current_version: "{{ '0.0.1' if k3s_current_version.skipped is defined else k3s_current_version.stdout | regex_replace('^k3s.* v([^)].*) .*', '\\1')  }}"
+    k3s_current_version: "{{ '0.0.1' if k3s_current_version.skipped is defined
+           else k3s_current_version.stdout | regex_replace('^k3s.* v([^)].*) .*', '\\1')  }}"
 
 - name: Get latest version number of k3s from github
   uri:
@@ -44,7 +45,7 @@
 # never doing downgrade!
 - name: Download k3s binary
   get_url:
-      url: "https://github.com/rancher/k3s/releases/download/v{{ k3s_version |default (k3s_latest_version) }}/k3s{{k3s_archs[ansible_facts.architecture]}}"
+      url: "https://github.com/rancher/k3s/releases/download/v{{ k3s_version |default (k3s_latest_version) }}/k3s{{ k3s_archs[ansible_facts.architecture] }}"
       dest: "{{ k3s_bin_path }}/k3s"
       owner: root
       group: root
@@ -70,7 +71,7 @@
 
 - name: Configure firewalld
   include_tasks: firewalld.yml
-  when: "'active' in fs_active.stdout_lines[0]"
+  when: fs_active.stdout_lines[0]|trim == 'active'
 
 - name: Check if we are on selinux enabled system
   command: getenforce
@@ -96,7 +97,7 @@
 - name: Apply new SELinux file context to filesystem
   command: restorecon -v "{{ k3s_bin_path }}/k3s"
   register: restorecon
-  changed_when: restorecon.stdout != ''
+  changed_when: restorecon.stdout|bool
   when:
     - selinux_state.rc != 2
     - selinux_state.stdout in ['Enforcing', 'Permissive']

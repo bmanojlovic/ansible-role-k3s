@@ -12,8 +12,8 @@
     line: "{{ item.name }}={{ item.value }}"
     dest: "/etc/{{ sysconfig_dir[ansible_os_family|lower()] }}/k3s-agent"
   with_items:
-    - { "name": "K3S_TOKEN" , "value": "{{ node_token }}" }
-    - { "name": "K3S_URL" , "value": "https://{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}:6443" }
+    - { "name": "K3S_TOKEN", "value": "{{ node_token }}" }
+    - { "name": "K3S_URL", "value": "https://{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}:6443" }
 
 
 - name: Start k3s service
