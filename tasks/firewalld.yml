@@ -1,14 +1,14 @@
 ---
 
 - name: Check if k3s zone already exists
-  shell: firewall-cmd --permanent --zone=k3s  --list-sources
+  command: firewall-cmd --permanent --zone=k3s  --list-sources
   register: fw_check
   failed_when: false
   changed_when: false
 
-
 - name: Add k3s zone to firewalld and set rules
-  shell: "firewall-cmd --permanent {{ item }}"
+  command: "firewall-cmd --permanent {{ item }}"
+  register: fw_set
   with_items:
     - --new-zone=k3s
     - --zone=k3s --set-target=ACCEPT
@@ -22,3 +22,5 @@
   service:
     name: firewalld
     state: reloaded
+  when:
+    - fw_set.results[0].skipped is not defined

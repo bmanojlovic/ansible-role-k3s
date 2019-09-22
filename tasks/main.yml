@@ -5,7 +5,7 @@
   register: stat_k3s
 
 - name: Get current version of k3s if present
-  shell: /usr/local/bin/k3s -version
+  command: /usr/local/bin/k3s -version
   register: k3s_current_version
   changed_when: false
   when:
@@ -63,9 +63,10 @@
     - ctr
 
 - name: If firewalld is active set it up for k3s
-  shell: systemctl is-active firewalld
+  command: systemctl is-active firewalld
   register: fs_active
   changed_when: False
+  failed_when: False
 
 - name: Configure firewalld
   include_tasks: firewalld.yml
@@ -73,7 +74,7 @@
 
 - name: Check if we are on selinux enabled system
   command: getenforce
-  register: selinux_state  
+  register: selinux_state
   failed_when: False
   changed_when: False
 
@@ -108,7 +109,6 @@
 
 - name: Include tasks for node
   include_tasks: node.yml
-  when: 
+  when:
     - "'node' in group_names"
     - "not ('node' in group_names and 'master' in group_names)"
-    

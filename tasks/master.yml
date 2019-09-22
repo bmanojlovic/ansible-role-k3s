@@ -14,7 +14,7 @@
     - "# line"
 
 - name: Start k3s service
-  service: 
+  service:
     name: k3s
     enabled: yes
     state: started
